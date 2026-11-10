@@ -4,6 +4,9 @@ inputs:
   snyk-token:
     description: 'Snyk authentication token'
     required: true
+  snyk-org:
+    description: 'Snyk Org ID to run snyk-cli commands'
+    required: false
     
 runs:
   using: "composite"
@@ -15,5 +18,8 @@ runs:
         chmod +x ./snyk
         mv ./snyk /usr/local/bin/
         snyk auth $SNYK_TOKEN
+        snyk config set org=$SNYK_ORGID
+        snyk config get org
       env:
         SNYK_TOKEN: ${{ inputs.snyk-token }}
+        SNYK_ORGID: ${{ inputs.snyk-org }}

@@ -37,6 +37,7 @@ jobs:
         uses: ./.github/actions/snyk-cli
         with:
           snyk-token: ${{ secrets.SNYK_TOKEN }}
+          snyk-org: ${{ secrets.SNYK_ORGID }}
 
       # Reports live outside the workspace so they are never scanned as source.
       - name: Prepare report directory
