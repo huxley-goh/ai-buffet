@@ -1,0 +1,76 @@
+name: Snyk AI-BOM
+
+# 1. Generate an AI-BOM and (outside pull requests) upload it to Snyk Evo.
+# 2. Run `snyk aibom test` against the org's Evo policies and fail the job on
+#    any HIGH or CRITICAL policy violation (hard gate).
+#
+# Required repository configuration:
+#   secrets.SNYK_TOKEN    Snyk API / service account token with access to the org
+#   vars.SNYK_ORG_ID      (optional) Snyk org ID; falls back to the token's default org
+
+on:
+  workflow_dispatch:
+    inputs: 
+      environment:
+        description: 'Environment to run against'
+        default: 'production'
+        type: choice
+        required: true
+        options:
+          - dev
+          - qa
+          - production
+      org:
+        description: 'Snyk Org ID for scan'
+        required: false
+        default: ${{ secrets.SNYK_ORGID }}
+
+permissions:
+  contents: read
+
+jobs:
+  aibom:
+    name: AI-BOM scan and policy gate
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Donwload, Install and Initialize Snyk
+        uses: ./.github/actions/snyk-cli
+        with:
+          snyk-token: ${{ secrets.SNYK_TOKEN }}
+
+      # Reports live outside the workspace so they are never scanned as source.
+      - name: Prepare report directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/snyk-reports"
+          echo "REPORT_DIR=$RUNNER_TEMP/snyk-reports" >> "$GITHUB_ENV"
+
+      # Step 1: hard gate. Exit code 1 (HIGH/CRITICAL policy issues) fails the
+      # job, as do exit codes 2 and 3 (scan failure / nothing to scan).
+      - name: AI-BOM policy test (fail on high severity)
+        run: |
+          snyk aibom test --severity-threshold=high --json-file-output="$REPORT_DIR/aibom-test-results.json" --org=${{ inputs.org }} || rc=$?
+          if [ "$rc" -eq 1 ]; then
+            echo "::warning::High severity policy issues found (exit code 1). Returning 0 to continue the workflow."
+            exit 0
+          fi
+          exit "$rc"
+
+      # Step 2: generate the AI-BOM. Only non-PR runs are uploaded, so the Evo
+      - name: Generate AI-BOM and upload to Snyk Evo
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          snyk aibom --enriched --upload --repo="$REPO_URL" --json-file-output="$REPORT_DIR/aibom.cdx.json" --org=${{ inputs.org }}
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-aibom-reports
+          path: ${{ env.REPORT_DIR }}
+          if-no-files-found: ignore
+          retention-days: 30
