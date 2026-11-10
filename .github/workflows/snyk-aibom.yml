@@ -23,7 +23,8 @@ on:
       org:
         description: 'Snyk Org ID for scan'
         required: false
-        default: ${{ secrets.SNYK_ORGID }}
+        type: string
+        default: '${{ secrets.SNYK_ORGID }}'
 
 permissions:
   contents: read
