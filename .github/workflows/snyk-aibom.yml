@@ -20,11 +20,6 @@ on:
           - dev
           - qa
           - production
-      org:
-        description: 'Snyk Org ID for scan'
-        required: false
-        type: string
-        default: '${{ secrets.SNYK_ORGID }}'
 
 permissions:
   contents: read
@@ -53,7 +48,7 @@ jobs:
       # job, as do exit codes 2 and 3 (scan failure / nothing to scan).
       - name: AI-BOM policy test (fail on high severity)
         run: |
-          snyk aibom test --severity-threshold=high --json-file-output="$REPORT_DIR/aibom-test-results.json" --org=${{ inputs.org }} || rc=$?
+          snyk aibom test --severity-threshold=high --json-file-output="$REPORT_DIR/aibom-test-results.json" || rc=$?
           if [ "$rc" -eq 1 ]; then
             echo "::warning::High severity policy issues found (exit code 1). Returning 0 to continue the workflow."
             exit 0
@@ -66,7 +61,7 @@ jobs:
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           set -euo pipefail
-          snyk aibom --enriched --upload --repo="$REPO_URL" --json-file-output="$REPORT_DIR/aibom.cdx.json" --org=${{ inputs.org }}
+          snyk aibom --enriched --upload --repo="$REPO_URL" --json-file-output="$REPORT_DIR/aibom.cdx.json"
 
       - name: Upload reports
         uses: actions/upload-artifact@v4
