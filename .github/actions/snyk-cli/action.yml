@@ -7,6 +7,9 @@ inputs:
   snyk-org:
     description: 'Snyk Org ID to run snyk-cli commands'
     required: false
+  snyk-version:
+    description: 'Snyk CLI version to install and use for scanning'
+    required: false
     
 runs:
   using: "composite"
@@ -14,7 +17,7 @@ runs:
     - name: "Donwload, Install and Initialize Snyk"
       shell: bash
       run: |
-        curl https://static.snyk.io/cli/latest/snyk-linux -o snyk
+        curl https://static.snyk.io/cli/$SNYK_VERSION/snyk-linux -o snyk
         chmod +x ./snyk
         mv ./snyk /usr/local/bin/
         snyk auth $SNYK_TOKEN
@@ -23,3 +26,4 @@ runs:
       env:
         SNYK_TOKEN: ${{ inputs.snyk-token }}
         SNYK_ORGID: ${{ inputs.snyk-org }}
+        SNYK_VERSION: ${{ inputs.snyk-version }}

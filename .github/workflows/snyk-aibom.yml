@@ -20,6 +20,11 @@ on:
           - dev
           - qa
           - production
+      snyk-version:
+        description: 'Snyk CLI version to install and use for scanning'
+        required: false
+        default: 'latest'
+        type: string
 
 permissions:
   contents: read
@@ -38,6 +43,7 @@ jobs:
         with:
           snyk-token: ${{ secrets.SNYK_TOKEN }}
           snyk-org: ${{ secrets.SNYK_ORGID }}
+          snyk-version: ${{ inputs.snyk-version }}
 
       # Reports live outside the workspace so they are never scanned as source.
       - name: Prepare report directory
