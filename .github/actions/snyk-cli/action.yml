@@ -20,6 +20,7 @@ runs:
         curl https://static.snyk.io/cli/$SNYK_VERSION/snyk-linux -o snyk
         chmod +x ./snyk
         mv ./snyk /usr/local/bin/
+        snyk version
         snyk auth $SNYK_TOKEN
         snyk config set org=$SNYK_ORGID
         snyk config get org
